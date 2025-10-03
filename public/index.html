@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Library</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>My Virtual Library</h1>
+        <nav>
+            <ul>
+                <li><a href="#">My Library</a></li>
+                <li><a href="#">Discover</a></li>
+                <li><a href="stats.html">Statistics</a></li>
+                <li><a href="#">Settings</a></li>
+                <li><a href="register.html">Register</a></li>
+                <li><a href="login.html">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="my-library">
+            <h2>My Library</h2>
+            <div id="my-library-books" class="book-grid">
+            </div>
+        </section>
+
+        <section id="current-reading">
+            <h2>Currently Reading</h2>
+            <div class="book-card">
+                <p>No book currently being read.</p>
+            </div>
+        </section>
+
+        <section id="upcoming-books">
+            <h2>Upcoming Books</h2>
+            <div class="book-grid">
+                <p>No upcoming books.</p>
+            </div>
+        </section>
+
+        <section id="quick-stats">
+            <h2>Quick Stats</h2>
+            <div class="stats-cards">
+                <p>No statistics available.</p>
+            </div>
+        </section>
+
+        <section id="book-search">
+            <h2>Search Books</h2>
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="Search by title, author or ISBN...">
+                <button id="search-button">Search</button>
+            </div>
+            <div id="search-results" class="book-grid">
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Virtual Library</p>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
+

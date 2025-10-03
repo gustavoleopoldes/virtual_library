@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics - Virtual Library</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Reading Statistics</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">My Library</a></li>
+                <li><a href="#">Discover</a></li>
+                <li><a href="stats.html">Statistics</a></li>
+                <li><a href="#">Settings</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="stats-section">
+            <h2>Statistics Overview</h2>
+            <div class="stats-overview">
+                <p>Total Books Read: <span id="total-books-read">0</span></p>
+                <p>Total Pages Read: <span id="total-pages-read">0</span></p>
+                <p>Average Pages per Book: <span id="avg-pages-per-book">0</span></p>
+            </div>
+
+            <h2>Books Read by Month</h2>
+            <canvas id="booksReadChart"></canvas>
+
+            <h2>Most Read Genres</h2>
+            <canvas id="genresChart"></canvas>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Virtual Library</p>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
+
