@@ -1,0 +1,189 @@
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    nav ul {
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .user-actions {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        max-width: 200px;
+    }
+
+    .user-info {
+        text-align: center;
+    }
+
+    .hero h2 {
+        font-size: 28px;
+    }
+
+    .hero p {
+        font-size: 16px;
+    }
+
+    .features {
+        padding: 50px 0;
+    }
+
+    .how-it-works {
+        padding: 50px 0;
+    }
+
+    .cta {
+        padding: 50px 0;
+    }
+
+    .dashboard {
+        padding: 50px 0;
+    }
+
+    .step {
+        min-width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        gap: 20px;
+        align-items: flex-start;
+    }
+    
+    .dashboard-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .search-box-dashboard {
+        width: 100%;
+    }
+
+    .search-box-dashboard input {
+        width: 100%;
+    }
+    
+    .book-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .search-box {
+        flex-direction: column;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+
+    .library-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .books-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+
+    .quick-actions {
+        flex-direction: column;
+    }
+
+    .library-filters {
+        justify-content: center;
+    }
+
+    .filter-btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero {
+        padding: 50px 0;
+    }
+
+    .hero h2 {
+        font-size: 24px;
+    }
+
+    .feature-card {
+        padding: 20px;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .library-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .books-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .book-actions {
+        flex-direction: column;
+    }
+
+    .search-result-item {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .search-result-cover {
+        align-self: center;
+    }
+
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+
+    .stat-info h3 {
+        font-size: 28px;
+    }
+
+    .dashboard-title {
+        font-size: 24px;
+    }
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
