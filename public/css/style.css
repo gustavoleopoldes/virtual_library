@@ -660,7 +660,6 @@ input, select, textarea {
     border-radius: 5px;
 }
 
-/* Estilos para notas */
 .note-item {
     transition: all 0.3s ease;
     background: var(--light-gray);
