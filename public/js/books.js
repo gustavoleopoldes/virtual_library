@@ -37,15 +37,15 @@ class BooksManager {
 
     addManualBook(e) {
         e.preventDefault();
-        const inputs = e.target.elements;
+        const formData = new FormData(e.target);
         
         const book = {
             id: 'book_' + Date.now(),
-            title: inputs[0].value,
-            authors: [inputs[1].value],
-            isbn: inputs[2].value,
-            pages: parseInt(inputs[3].value) || null,
-            status: inputs[4].value,
+            title: formData.get('title') || e.target[0].value,
+            authors: [formData.get('author') || e.target[1].value],
+            isbn: formData.get('isbn') || e.target[2].value,
+            pages: parseInt(formData.get('pages')) || parseInt(e.target[3].value) || null,
+            status: formData.get('status') || e.target[4].value,
             favorite: false,
             progress: 0,
             notes: [],
