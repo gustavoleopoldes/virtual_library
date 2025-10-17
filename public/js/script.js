@@ -3,380 +3,193 @@ class MyReadsApp {
         this.books = [];
         this.currentFilter = 'all';
         this.currentUser = null;
+        this.charts = {};
+        
+        this.storageManager = StorageManager;
+        this.authManager = new AuthManager(this);
+        this.booksManager = new BooksManager(this);
+        this.apiManager = new ApiManager(this);
+        this.uiManager = new UIManager(this);
+        
         this.init();
     }
 
     init() {
-        this.checkAuth();
+        this.authManager.checkAuth();
         this.setupEventListeners();
-        this.loadBooks();
-    }
-
-    checkAuth() {
-        const user = localStorage.getItem('myreads_user');
-        const books = localStorage.getItem('myreads_books');
-        
-        if (user) {
-            this.currentUser = JSON.parse(user);
-            this.showDashboard();
-        }
-        
-        if (books) {
-            this.books = JSON.parse(books);
-        }
-    }
-
-    handleLogin(e) {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const email = formData.get('email');
-        const password = formData.get('password');
-
-        if (!email || !password) {
-            this.showNotification('Fill in all fields', 'error');
-            return;
-        }
-
-        this.currentUser = {
-            id: Date.now(),
-            email: email,
-            name: email.split('@')[0]
-        };
-
-        localStorage.setItem('myreads_user', JSON.stringify(this.currentUser));
-        this.showDashboard();
-        this.hideModal('authModal');
-        this.showNotification('Login successful!', 'success');
-    }
-
-    handleRegister(e) {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const name = formData.get('name');
-        const email = formData.get('email');
-        const password = formData.get('password');
-        const confirmPassword = formData.get('confirmPassword');
-
-        if (!name || !email || !password || !confirmPassword) {
-            this.showNotification('Fill in all fields', 'error');
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            this.showNotification('Passwords do not match', 'error');
-            return;
-        }
-
-        this.currentUser = {
-            id: Date.now(),
-            name: name,
-            email: email
-        };
-
-        localStorage.setItem('myreads_user', JSON.stringify(this.currentUser));
-        this.showDashboard();
-        this.hideModal('authModal');
-        this.showNotification(`Welcome, ${name}!`, 'success');
-    }
-
-    logout() {
-        this.currentUser = null;
-        localStorage.removeItem('myreads_user');
-        this.showLandingPage();
-        this.showNotification('Logout successful', 'info');
+        this.booksManager.loadBooks();
+        this.addNotificationStyles();
     }
 
     showAuthModal() {
-        this.showModal('authModal');
-        this.switchTab('login');
-    }
-
-    showLandingPage() {
-        document.getElementById('landingPage').classList.remove('hidden');
-        document.getElementById('dashboard').classList.add('hidden');
-        document.getElementById('userActions').innerHTML = `
-            <button class="btn btn-outline" id="loginBtn">Login</button>
-            <button class="btn btn-primary" id="registerBtn">Register</button>
-        `;
-        setTimeout(() => {
-            document.getElementById('loginBtn').addEventListener('click', () => this.showAuthModal());
-            document.getElementById('registerBtn').addEventListener('click', () => this.showAuthModal());
-        }, 100);
-    }
-
-    showDashboard() {
-        document.getElementById('landingPage').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('hidden');
-        document.getElementById('userActions').innerHTML = `
-            <span style="color: white; margin-right: 1rem;">Hello, ${this.currentUser?.name || 'User'}</span>
-            <button class="btn btn-outline" onclick="myReadsApp.logout()">Logout</button>
-        `;
-        this.updateStats();
-        this.renderBooks();
-    }
-
-    showModal(modalId) {
-        document.getElementById(modalId).classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-
-    hideModal(modalId) {
-        document.getElementById(modalId).classList.add('hidden');
-        document.body.style.overflow = 'auto';
-        
-        if (modalId === 'addBookModal') {
-            document.getElementById('searchResults').innerHTML = '';
-            document.getElementById('bookSearch').value = '';
-        }
-    }
-
-    switchTab(tab) {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            if (btn.textContent.toLowerCase().includes(tab)) {
-                btn.classList.add('active');
-            }
-        });
-
-        document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
-        document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+        this.uiManager.showModal('authModal');
+        this.uiManager.switchTab('login');
     }
 
     showAddBookModal() {
-        this.showModal('addBookModal');
-    }
-
-    loadBooks() {
-        const saved = localStorage.getItem('myreads_books');
-        this.books = saved ? JSON.parse(saved) : [];
-        this.renderBooks();
-        this.updateStats();
-    }
-
-    saveBooks() {
-        localStorage.setItem('myreads_books', JSON.stringify(this.books));
-        this.renderBooks();
-        this.updateStats();
+        this.uiManager.showModal('addBookModal');
     }
 
     setFilter(filter) {
         this.currentFilter = filter;
         document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
-        this.renderBooks();
+        this.uiManager.renderBooks();
     }
 
-    renderBooks() {
-        const grid = document.getElementById('booksGrid');
-        const emptyState = document.getElementById('emptyState');
-        
-        const filteredBooks = this.currentFilter === 'all' 
-            ? this.books 
-            : this.books.filter(book => book.status === this.currentFilter);
-
-        if (filteredBooks.length === 0) {
-            grid.innerHTML = '';
-            emptyState.classList.remove('hidden');
+    searchBooks() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        if (!term) {
+            this.uiManager.renderBooks();
             return;
         }
 
-        emptyState.classList.add('hidden');
-        grid.innerHTML = filteredBooks.map(book => `
-            <div class="book-card">
-                <div class="book-cover">
-                    ${book.coverUrl 
-                        ? `<img src="${book.coverUrl}" alt="${book.title}" style="width:100%;height:100%;object-fit:cover;">`
-                        : `<i class="fas fa-book"></i>`
+        const filtered = this.books.filter(book =>
+            book.title.toLowerCase().includes(term) ||
+            book.authors.some(author => author.toLowerCase().includes(term))
+        );
+
+        this.uiManager.renderFilteredBooks(filtered);
+    }
+
+    updateCharts() {
+        this.updateReadingConsistencyChart();
+        this.updateBooksByStatusChart();
+        this.updateReadingInsights();
+    }
+
+    updateReadingConsistencyChart() {
+        const ctx = document.getElementById('readingConsistencyChart');
+        if (!ctx) return;
+
+        const consistencyData = this.booksManager.getReadingConsistencyData(30);
+        
+        if (this.charts.readingConsistency) {
+            this.charts.readingConsistency.destroy();
+        }
+
+        this.charts.readingConsistency = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: consistencyData.labels.map(date => {
+                    const d = new Date(date);
+                    return `${d.getDate()}/${d.getMonth() + 1}`;
+                }),
+                datasets: [{
+                    label: 'Reading Sessions',
+                    data: consistencyData.data,
+                    backgroundColor: '#1ABC9C',
+                    borderColor: '#16a085',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        },
+                        title: {
+                            display: true,
+                            text: 'Sessions per Day'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
                     }
-                </div>
-                <div class="book-info">
-                    <h3 class="book-title">${book.title}</h3>
-                    <p class="book-author">${book.authors?.join(', ') || 'Unknown author'}</p>
-                    <div class="book-meta">
-                        <span class="book-status status-${book.status}">
-                            ${this.getStatusText(book.status)}
-                        </span>
-                        ${book.pages ? `<span>${book.pages}p</span>` : ''}
-                    </div>
-                    <div class="book-actions">
-                        <button onclick="myReadsApp.showBookDetails('${book.id}')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button onclick="myReadsApp.updateStatus('${book.id}', '${this.getNextStatus(book.status)}')">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        <button class="primary" onclick="myReadsApp.toggleFavorite('${book.id}')">
-                            <i class="fas fa-heart" style="color: ${book.favorite ? '#e74c3c' : 'white'}"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    getStatusText(status) {
-        const statusMap = {
-            'want_to_read': 'Want to Read',
-            'reading': 'Reading',
-            'read': 'Read',
-            'favorites': 'Favorite'
-        };
-        return statusMap[status] || status;
-    }
-
-    getNextStatus(currentStatus) {
-        const statusFlow = {
-            'want_to_read': 'reading',
-            'reading': 'read',
-            'read': 'want_to_read',
-            'favorites': 'want_to_read'
-        };
-        return statusFlow[currentStatus] || 'want_to_read';
-    }
-
-    updateStats() {
-        const stats = {
-            total: this.books.length,
-            read: this.books.filter(b => b.status === 'read').length,
-            reading: this.books.filter(b => b.status === 'reading').length,
-            want_to_read: this.books.filter(b => b.status === 'want_to_read').length
-        };
-
-        document.getElementById('totalBooks').textContent = stats.total;
-        document.getElementById('readBooks').textContent = stats.read;
-        document.getElementById('readingBooks').textContent = stats.reading;
-        document.getElementById('wantToReadBooks').textContent = stats.want_to_read;
-    }
-
-    async searchExternalBooks() {
-        const query = document.getElementById('bookSearch').value.trim();
-        if (!query) {
-            this.showNotification('Enter a search term', 'info');
-            return;
-        }
-
-        const results = document.getElementById('searchResults');
-        results.innerHTML = '<p style="padding: 2rem; text-align: center;">Searching books...</p>';
-
-        try {
-            const books = await this.searchGoogleBooks(query);
-            this.displaySearchResults(books);
-        } catch (error) {
-            console.error('Search error:', error);
-            results.innerHTML = '<p style="padding: 2rem; text-align: center; color: #e74c3c;">Error searching books. Try again.</p>';
-        }
-    }
-
-    async searchGoogleBooks(query) {
-        const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10`);
-        const data = await response.json();
-        
-        if (!data.items) return [];
-        
-        return data.items.map(item => {
-            const volumeInfo = item.volumeInfo;
-            return {
-                id: item.id,
-                title: volumeInfo.title || 'Unknown title',
-                authors: volumeInfo.authors || ['Unknown author'],
-                description: volumeInfo.description,
-                pages: volumeInfo.pageCount,
-                publishedDate: volumeInfo.publishedDate,
-                coverUrl: volumeInfo.imageLinks?.thumbnail?.replace('http://', 'https://'),
-                source: 'google'
-            };
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: (context) => {
+                                const date = consistencyData.labels[context[0].dataIndex];
+                                return new Date(date).toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                });
+                            }
+                        }
+                    }
+                }
+            }
         });
     }
 
-    displaySearchResults(books) {
-        const results = document.getElementById('searchResults');
+    updateBooksByStatusChart() {
+        const ctx = document.getElementById('booksByStatusChart');
+        if (!ctx) return;
+
+        const statusData = this.booksManager.getBooksByStatusData();
         
-        if (books.length === 0) {
-            results.innerHTML = '<p style="padding: 2rem; text-align: center;">No books found. Try other terms.</p>';
-            return;
+        if (this.charts.booksByStatus) {
+            this.charts.booksByStatus.destroy();
         }
 
-        results.innerHTML = books.map(book => `
-            <div class="search-result-item" onclick="myReadsApp.addBookFromSearch(${JSON.stringify(book).replace(/"/g, '&quot;')})">
-                <div>
-                    ${book.coverUrl 
-                        ? `<img src="${book.coverUrl}" alt="${book.title}">`
-                        : `<div style="width:60px;height:80px;background:#eee;display:flex;align-items:center;justify-content:center;">
-                             <i class="fas fa-book" style="color:#666;"></i>
-                           </div>`
+        this.charts.booksByStatus = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: statusData.labels,
+                datasets: [{
+                    data: statusData.data,
+                    backgroundColor: statusData.colors,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const label = context.label;
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
-                </div>
-                <div style="flex:1;">
-                    <h4 style="margin-bottom:0.5rem;color:var(--primary);">${book.title}</h4>
-                    <p style="margin-bottom:0.5rem;color:var(--dark-gray);">${book.authors.join(', ')}</p>
-                    ${book.publishedDate ? `<small style="color:#666;">Published: ${book.publishedDate}</small>` : ''}
-                    ${book.pages ? `<small style="color:#666;margin-left:0.5rem;">• ${book.pages} pages</small>` : ''}
-                    ${book.description ? `<p style="margin-top:0.5rem;font-size:0.8rem;color:#666;line-height:1.3;">${book.description.substring(0, 100)}...</p>` : ''}
-                </div>
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    updateReadingInsights() {
+        const insightsContainer = document.getElementById('readingInsights');
+        if (!insightsContainer) return;
+
+        const insights = this.booksManager.getReadingInsights();
+        
+        insightsContainer.innerHTML = insights.map(insight => `
+            <div class="insight-card">
+                <i class="${insight.icon}"></i>
+                <h4>${insight.value}</h4>
+                <p>${insight.title}</p>
+                <small>${insight.description}</small>
             </div>
         `).join('');
-    }
-
-    addBookFromSearch(bookData) {
-        const book = {
-            id: 'book_' + Date.now(),
-            ...bookData,
-            status: 'want_to_read',
-            favorite: false,
-            progress: 0,
-            notes: [],
-            addedDate: new Date().toISOString()
-        };
-
-        this.books.unshift(book);
-        this.saveBooks();
-        this.hideModal('addBookModal');
-        this.showNotification('Book added successfully!', 'success');
-    }
-
-    addManualBook(e) {
-        e.preventDefault();
-        const inputs = e.target.elements;
-        
-        const book = {
-            id: 'book_' + Date.now(),
-            title: inputs[0].value,
-            authors: [inputs[1].value],
-            isbn: inputs[2].value,
-            pages: parseInt(inputs[3].value) || null,
-            status: inputs[4].value,
-            favorite: false,
-            progress: 0,
-            notes: [],
-            addedDate: new Date().toISOString()
-        };
-
-        this.books.unshift(book);
-        this.saveBooks();
-        this.hideModal('addBookModal');
-        e.target.reset();
-        this.showNotification('Book added successfully!', 'success');
-    }
-
-    updateStatus(bookId, newStatus) {
-        const book = this.books.find(b => b.id === bookId);
-        if (book) {
-            book.status = newStatus;
-            this.saveBooks();
-            this.showNotification('Status updated!', 'success');
-        }
-    }
-
-    toggleFavorite(bookId) {
-        const book = this.books.find(b => b.id === bookId);
-        if (book) {
-            book.favorite = !book.favorite;
-            if (book.favorite) {
-                book.status = 'favorites';
-            }
-            this.saveBooks();
-            this.showNotification(book.favorite ? 'Added to favorites!' : 'Removed from favorites!', 'success');
-        }
     }
 
     showBookDetails(bookId) {
@@ -409,7 +222,7 @@ class MyReadsApp {
                         </div>` : ''}
                         <div style="background:var(--light-gray);padding:1rem;border-radius:8px;text-align:center;">
                             <div style="font-size:0.8rem;color:var(--dark-gray);margin-bottom:0.5rem;">Status</div>
-                            <div style="font-weight:bold;color:var(--primary);font-size:1.2rem;">${this.getStatusText(book.status)}</div>
+                            <div style="font-weight:bold;color:var(--primary);font-size:1.2rem;">${this.booksManager.getStatusText(book.status)}</div>
                         </div>
                     </div>
 
@@ -429,12 +242,12 @@ class MyReadsApp {
                                        value="${book.progress || 0}" 
                                        min="0" 
                                        max="${book.pages || 1000}"
-                                       onchange="myReadsApp.updateProgress('${book.id}', this.value)"
+                                       onchange="myReadsApp.booksManager.updateProgress('${book.id}', this.value)"
                                        style="width:100%;padding:0.75rem;border:1px solid var(--light-gray);border-radius:5px;">
                             </div>
                             <div>
                                 <label style="display:block;margin-bottom:0.5rem;color:var(--dark-gray);font-weight:600;">Status</label>
-                                <select onchange="myReadsApp.updateStatus('${book.id}', this.value)" style="width:100%;padding:0.75rem;border:1px solid var(--light-gray);border-radius:5px;">
+                                <select onchange="myReadsApp.booksManager.updateStatus('${book.id}', this.value)" style="width:100%;padding:0.75rem;border:1px solid var(--light-gray);border-radius:5px;">
                                     <option value="want_to_read" ${book.status === 'want_to_read' ? 'selected' : ''}>Want to Read</option>
                                     <option value="reading" ${book.status === 'reading' ? 'selected' : ''}>Reading</option>
                                     <option value="read" ${book.status === 'read' ? 'selected' : ''}>Read</option>
@@ -454,142 +267,92 @@ class MyReadsApp {
 
                     <div style="background:var(--white);padding:1.5rem;border-radius:10px;box-shadow:var(--shadow);">
                         <h3 style="color:var(--primary);margin-bottom:1rem;">Notes & Quotes</h3>
-                        ${book.notes && book.notes.length > 0 ? 
-                            book.notes.map(note => `
-                                <div style="background:var(--light-gray);padding:1rem;border-radius:8px;margin-bottom:1rem;border-left:4px solid var(--secondary);">
-                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-                                        <span style="font-size:0.8rem;color:var(--dark-gray);background:var(--white);padding:0.25rem 0.5rem;border-radius:10px;">Page ${note.page || 1}</span>
-                                    </div>
-                                    <p style="line-height:1.5;color:var(--dark-gray);">${note.content}</p>
+                        
+                        <div style="background:var(--light-gray);padding:1.5rem;border-radius:8px;margin-bottom:2rem;">
+                            <h4 style="color:var(--primary);margin-bottom:1rem;">Add New Note</h4>
+                            <div style="display:grid;grid-template-columns:1fr 2fr auto;gap:1rem;align-items:end;">
+                                <div>
+                                    <label style="display:block;margin-bottom:0.5rem;color:var(--dark-gray);font-weight:600;">Page</label>
+                                    <input type="number" 
+                                           id="notePage-${book.id}" 
+                                           value="1" 
+                                           min="1" 
+                                           max="${book.pages || 1000}"
+                                           style="width:100%;padding:0.5rem;border:1px solid var(--light-gray);border-radius:5px;">
                                 </div>
-                            `).join('') 
-                            : '<p style="color:var(--dark-gray);text-align:center;padding:2rem;">No notes added yet.</p>'
-                        }
+                                <div>
+                                    <label style="display:block;margin-bottom:0.5rem;color:var(--dark-gray);font-weight:600;">Note</label>
+                                    <textarea 
+                                        id="noteContent-${book.id}"
+                                        placeholder="Write your note or quote here..."
+                                        style="width:100%;padding:0.5rem;border:1px solid var(--light-gray);border-radius:5px;min-height:60px;resize:vertical;"
+                                    ></textarea>
+                                </div>
+                                <div>
+                                    <button type="button" 
+                                            onclick="myReadsApp.addNoteToBook('${book.id}')"
+                                            style="background:var(--secondary);color:white;border:none;padding:0.5rem 1rem;border-radius:5px;cursor:pointer;white-space:nowrap;">
+                                        <i class="fas fa-plus"></i> Add Note
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="notes-container-${book.id}">
+                            ${book.notes && book.notes.length > 0 ? 
+                                book.notes.map(note => `
+                                    <div class="note-item" style="background:var(--light-gray);padding:1rem;border-radius:8px;margin-bottom:1rem;border-left:4px solid var(--secondary);position:relative;">
+                                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                                            <span style="font-size:0.8rem;color:var(--dark-gray);background:var(--white);padding:0.25rem 0.5rem;border-radius:10px;">
+                                                Page ${note.page || 1}
+                                            </span>
+                                            <small style="color:var(--dark-gray);">
+                                                ${new Date(note.date).toLocaleDateString()}
+                                            </small>
+                                        </div>
+                                        <p style="line-height:1.5;color:var(--dark-gray);margin:0;">${note.content}</p>
+                                        <button onclick="myReadsApp.booksManager.removeNote('${book.id}', '${note.id}')" 
+                                                style="position:absolute;top:0.5rem;right:0.5rem;background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.25rem;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                `).join('') 
+                                : '<p style="color:var(--dark-gray);text-align:center;padding:2rem;">No notes added yet. Add your first note above!</p>'
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
         `;
 
-        this.showModal('bookDetailsModal');
+        this.uiManager.showModal('bookDetailsModal');
     }
 
-    updateProgress(bookId, progress) {
-        const book = this.books.find(b => b.id === bookId);
-        if (book) {
-            book.progress = parseInt(progress) || 0;
-            if (book.pages && book.progress >= book.pages) {
-                book.status = 'read';
-            }
-            this.saveBooks();
+    addNoteToBook(bookId) {
+        const pageInput = document.getElementById(`notePage-${bookId}`);
+        const contentInput = document.getElementById(`noteContent-${bookId}`);
+        
+        const page = pageInput ? parseInt(pageInput.value) || 1 : 1;
+        const content = contentInput ? contentInput.value.trim() : '';
+        
+        if (!content) {
+            this.showNotification('Please enter note content', 'error');
+            return;
+        }
+        
+        const success = this.booksManager.addNote(bookId, content, page);
+        if (success) {
+            if (contentInput) contentInput.value = '';
+            if (pageInput) pageInput.value = '1';
+            
             this.showBookDetails(bookId);
         }
-    }
-
-    searchBooks() {
-        const term = document.getElementById('searchInput').value.toLowerCase();
-        if (!term) {
-            this.renderBooks();
-            return;
-        }
-
-        const filtered = this.books.filter(book =>
-            book.title.toLowerCase().includes(term) ||
-            book.authors.some(author => author.toLowerCase().includes(term))
-        );
-
-        this.renderFilteredBooks(filtered);
-    }
-
-    renderFilteredBooks(books) {
-        const grid = document.getElementById('booksGrid');
-        const emptyState = document.getElementById('emptyState');
-        
-        if (books.length === 0) {
-            grid.innerHTML = '';
-            emptyState.innerHTML = `
-                <i class="fas fa-search" style="font-size:4rem;color:var(--secondary);opacity:0.3;margin-bottom:1rem;"></i>
-                <h3 style="color:var(--primary);margin-bottom:1rem;">No books found</h3>
-                <p style="color:var(--dark-gray);margin-bottom:2rem;">Try using other search terms</p>
-                <button class="btn btn-primary" onclick="myReadsApp.showAddBookModal()">Add Book</button>
-            `;
-            emptyState.classList.remove('hidden');
-            return;
-        }
-
-        emptyState.classList.add('hidden');
-        grid.innerHTML = books.map(book => `
-            <div class="book-card">
-                <div class="book-cover">
-                    ${book.coverUrl 
-                        ? `<img src="${book.coverUrl}" alt="${book.title}" style="width:100%;height:100%;object-fit:cover;">`
-                        : `<i class="fas fa-book"></i>`
-                    }
-                </div>
-                <div class="book-info">
-                    <h3 class="book-title">${book.title}</h3>
-                    <p class="book-author">${book.authors?.join(', ') || 'Unknown author'}</p>
-                    <div class="book-meta">
-                        <span class="book-status status-${book.status}">
-                            ${this.getStatusText(book.status)}
-                        </span>
-                        ${book.pages ? `<span>${book.pages}p</span>` : ''}
-                    </div>
-                    <div class="book-actions">
-                        <button onclick="myReadsApp.showBookDetails('${book.id}')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button onclick="myReadsApp.updateStatus('${book.id}', '${this.getNextStatus(book.status)}')">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        <button class="primary" onclick="myReadsApp.toggleFavorite('${book.id}')">
-                            <i class="fas fa-heart" style="color: ${book.favorite ? '#e74c3c' : 'white'}"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    showNotification(message, type = 'info') {
-        const existingNotification = document.querySelector('.notification');
-        if (existingNotification) {
-            existingNotification.remove();
-        }
-
-        const notification = document.createElement('div');
-        notification.className = 'notification';
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            border-radius: 5px;
-            color: white;
-            font-weight: 600;
-            z-index: 1001;
-            background: ${type === 'success' ? '#1ABC9C' : type === 'error' ? '#e74c3c' : '#3498db'};
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: slideIn 0.3s ease;
-        `;
-        notification.textContent = message;
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.remove();
-                    }
-                }, 300);
-            }
-        }, 3000);
     }
 
     setupEventListeners() {
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
-                this.hideModal(e.target.id);
+                this.uiManager.hideModal(e.target.id);
             }
         });
 
@@ -603,7 +366,7 @@ class MyReadsApp {
         const bookSearch = document.getElementById('bookSearch');
         if (bookSearch) {
             bookSearch.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.searchExternalBooks();
+                if (e.key === 'Enter') this.apiManager.searchExternalBooks();
             });
         }
 
@@ -615,7 +378,7 @@ class MyReadsApp {
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const tab = e.target.textContent.toLowerCase();
-                this.switchTab(tab);
+                this.uiManager.switchTab(tab);
             });
         });
 
@@ -623,25 +386,40 @@ class MyReadsApp {
             if (e.key === 'Escape') {
                 const openModal = document.querySelector('.modal:not(.hidden)');
                 if (openModal) {
-                    this.hideModal(openModal.id);
+                    this.uiManager.hideModal(openModal.id);
                 }
             }
         });
     }
-}
 
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+    addNotificationStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
     }
-    
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
+
+    showLandingPage() { this.uiManager.showLandingPage(); }
+    showDashboard() { 
+        this.uiManager.showDashboard();
+        this.updateCharts();
     }
-`;
-document.head.appendChild(style);
+    showModal(modalId) { this.uiManager.showModal(modalId); }
+    hideModal(modalId) { this.uiManager.hideModal(modalId); }
+    switchTab(tab) { this.uiManager.switchTab(tab); }
+    showNotification(message, type) { this.uiManager.showNotification(message, type); }
+    renderBooks() { this.uiManager.renderBooks(); }
+    updateStats() { this.booksManager.updateStats(); }
+    searchExternalBooks() { this.apiManager.searchExternalBooks(); }
+}
 
 const myReadsApp = new MyReadsApp();
