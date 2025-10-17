@@ -10,9 +10,9 @@ class UIManager {
             <button class="btn btn-outline" id="loginBtn">Login</button>
             <button class="btn btn-primary" id="registerBtn">Register</button>
         `;
+        
         setTimeout(() => {
-            document.getElementById('loginBtn').addEventListener('click', () => this.app.showAuthModal());
-            document.getElementById('registerBtn').addEventListener('click', () => this.app.showAuthModal());
+            this.app.setupInitialEventListeners();
         }, 100);
     }
 
@@ -25,6 +25,7 @@ class UIManager {
         `;
         this.app.updateStats();
         this.app.renderBooks();
+        this.app.updateCharts();
     }
 
     showModal(modalId) {

@@ -15,10 +15,10 @@ class MyReadsApp {
     }
 
     init() {
-        this.authManager.checkAuth();
         this.setupEventListeners();
-        this.booksManager.loadBooks();
         this.addNotificationStyles();
+        this.authManager.checkAuth();
+        this.booksManager.loadBooks();
     }
 
     showAuthModal() {
@@ -33,7 +33,13 @@ class MyReadsApp {
     setFilter(filter) {
         this.currentFilter = filter;
         document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
+        
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            if (btn.textContent.toLowerCase().includes(filter.replace('_', ' '))) {
+                btn.classList.add('active');
+            }
+        });
+        
         this.uiManager.renderBooks();
     }
 
@@ -350,6 +356,10 @@ class MyReadsApp {
     }
 
     setupEventListeners() {
+        document.addEventListener('DOMContentLoaded', () => {
+            this.setupInitialEventListeners();
+        });
+
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
                 this.uiManager.hideModal(e.target.id);
@@ -370,18 +380,6 @@ class MyReadsApp {
             });
         }
 
-        document.getElementById('loginBtn')?.addEventListener('click', () => this.showAuthModal());
-        document.getElementById('registerBtn')?.addEventListener('click', () => this.showAuthModal());
-        document.getElementById('heroCta')?.addEventListener('click', () => this.showAuthModal());
-        document.getElementById('ctaButton')?.addEventListener('click', () => this.showAuthModal());
-
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const tab = e.target.textContent.toLowerCase();
-                this.uiManager.switchTab(tab);
-            });
-        });
-
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const openModal = document.querySelector('.modal:not(.hidden)');
@@ -389,6 +387,25 @@ class MyReadsApp {
                     this.uiManager.hideModal(openModal.id);
                 }
             }
+        });
+    }
+
+    setupInitialEventListeners() {
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const heroCta = document.getElementById('heroCta');
+        const ctaButton = document.getElementById('ctaButton');
+
+        if (loginBtn) loginBtn.addEventListener('click', () => this.showAuthModal());
+        if (registerBtn) registerBtn.addEventListener('click', () => this.showAuthModal());
+        if (heroCta) heroCta.addEventListener('click', () => this.showAuthModal());
+        if (ctaButton) ctaButton.addEventListener('click', () => this.showAuthModal());
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tab = e.target.textContent.toLowerCase();
+                this.uiManager.switchTab(tab);
+            });
         });
     }
 

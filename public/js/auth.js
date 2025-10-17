@@ -3,6 +3,16 @@ class AuthManager {
         this.app = app;
     }
 
+    checkAuth() {
+        const user = StorageManager.getUser();
+        if (user) {
+            this.app.currentUser = user;
+            this.app.showDashboard();
+        } else {
+            this.app.showLandingPage();
+        }
+    }
+
     handleLogin(e) {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -45,6 +55,11 @@ class AuthManager {
             return;
         }
 
+        if (password.length < 6) {
+            this.app.showNotification('Password must be at least 6 characters', 'error');
+            return;
+        }
+
         const user = {
             id: Date.now(),
             name: name,
@@ -63,13 +78,5 @@ class AuthManager {
         StorageManager.removeUser();
         this.app.showLandingPage();
         this.app.showNotification('Logout successful', 'info');
-    }
-
-    checkAuth() {
-        const user = StorageManager.getUser();
-        if (user) {
-            this.app.currentUser = user;
-            this.app.showDashboard();
-        }
     }
 }

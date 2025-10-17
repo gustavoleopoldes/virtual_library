@@ -7,6 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
@@ -149,6 +151,25 @@
                 </div>
             </div>
 
+            <div class="reading-stats-section">
+                <h2>Reading Statistics</h2>
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Reading Consistency (Last 30 Days)</h3>
+                        <canvas id="readingConsistencyChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Books by Status</h3>
+                        <canvas id="booksByStatusChart"></canvas>
+                    </div>
+                </div>
+                <div class="reading-insights">
+                    <h3>Your Reading Insights</h3>
+                    <div class="insights-grid" id="readingInsights">
+                    </div>
+                </div>
+            </div>
+
             <div class="filters">
                 <button class="filter-btn active" onclick="myReadsApp.setFilter('all')">All</button>
                 <button class="filter-btn" onclick="myReadsApp.setFilter('reading')">Reading</button>
@@ -176,14 +197,14 @@
                 <button class="tab-btn" onclick="myReadsApp.switchTab('register')">Register</button>
             </div>
             
-            <form id="loginForm" onsubmit="myReadsApp.handleLogin(event)">
+            <form id="loginForm" onsubmit="myReadsApp.authManager.handleLogin(event)">
                 <h3>Login to your account</h3>
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="password" name="password" placeholder="Password" required>
                 <button type="submit" class="btn btn-primary">Login</button>
             </form>
 
-            <form id="registerForm" class="hidden" onsubmit="myReadsApp.handleRegister(event)">
+            <form id="registerForm" class="hidden" onsubmit="myReadsApp.authManager.handleRegister(event)">
                 <h3>Create your account</h3>
                 <input type="text" name="name" placeholder="Full name" required>
                 <input type="email" name="email" placeholder="Email" required>
@@ -212,12 +233,12 @@
 
             <div class="manual-add">
                 <h3>Add Manually</h3>
-                <form onsubmit="myReadsApp.addManualBook(event)">
-                    <input type="text" placeholder="Title *" required>
-                    <input type="text" placeholder="Author *" required>
-                    <input type="text" placeholder="ISBN">
-                    <input type="number" placeholder="Pages">
-                    <select>
+                <form onsubmit="myReadsApp.booksManager.addManualBook(event)">
+                    <input type="text" name="title" placeholder="Title *" required>
+                    <input type="text" name="author" placeholder="Author *" required>
+                    <input type="text" name="isbn" placeholder="ISBN">
+                    <input type="number" name="pages" placeholder="Pages">
+                    <select name="status">
                         <option value="want_to_read">Want to Read</option>
                         <option value="reading">Reading</option>
                         <option value="read">Read</option>
@@ -235,6 +256,11 @@
         </div>
     </div>
 
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/books.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
     <script src="js/script.js"></script>
 </body>
 </html>
